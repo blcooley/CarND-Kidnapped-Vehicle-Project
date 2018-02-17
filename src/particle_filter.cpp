@@ -19,12 +19,43 @@
 
 using namespace std;
 
+// Implementation for this method adapted from Lesson 15, Lecture 5 of Udacity SDCND 2018/02/16
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// TODO: Set the number of particles. Initialize all particles to first position (based on estimates of 
 	//   x, y, theta and their uncertainties from GPS) and all weights to 1. 
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
 
+  if (is_initialized) return;
+  
+  default_random_engine gen;
+
+  double std_x = std[0];
+  double std_y = std[1];
+  double std_theta = std[2];
+
+  normal_distribution<double> dist_x(x, std_x);
+  normal_distribution<double> dist_y(y, std_y);
+  normal_distribution<double> dist_theta(theta, std_theta);
+
+  for (int i = 0; i < num_particles; ++i) {
+    double sample_x, sample_y, sample_theta;
+		
+    sample_x = dist_x(gen);
+    sample_y = dist_y(gen);
+    sample_theta = dist_theta(gen);	 
+
+    Particle particle;
+    particle.id = i;
+    particle.x = sample_x;
+    particle.y = sample_y;
+    particle.theta = sample_theta;
+    particle.weight = 1.0 / num_particles;
+
+    particles.push_back(particle);
+  }
+
+  is_initialized = true;
 }
 
 void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) {
@@ -33,6 +64,21 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
 
+  for (int i = 0; i < particles.size(); i++) {
+    double x = particles[i].x;
+    double y = particles[i].y;
+    double theta = particles[i].theta;
+    
+    if (abs(yaw_rate) > 0.0001) {
+      particles[i].x = x + velocity / yaw_rate * ( sin(theta + yaw_rate * delta_t) - sin(theta));
+      particles[i].y = y + velocity / yaw_rate * (-cos(theta + yaw_rate * delta_t) + cos(theta));
+      particles[i].theta = theta * delta_t * yaw_rate;
+    } else {
+      particles[i].x = x + velocity * sin(theta);
+      particles[i].y = y + velocity * cos(theta);
+      particles[i].theta = theta;
+    }
+  }
 }
 
 void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
@@ -79,28 +125,28 @@ Particle ParticleFilter::SetAssociations(Particle& particle, const std::vector<i
 
 string ParticleFilter::getAssociations(Particle best)
 {
-	vector<int> v = best.associations;
-	stringstream ss;
-    copy( v.begin(), v.end(), ostream_iterator<int>(ss, " "));
-    string s = ss.str();
-    s = s.substr(0, s.length()-1);  // get rid of the trailing space
-    return s;
+  vector<int> v = best.associations;
+  stringstream ss;
+  copy( v.begin(), v.end(), ostream_iterator<int>(ss, " "));
+  string s = ss.str();
+  s = s.substr(0, s.length()-1);  // get rid of the trailing space
+  return s;
 }
 string ParticleFilter::getSenseX(Particle best)
 {
-	vector<double> v = best.sense_x;
-	stringstream ss;
-    copy( v.begin(), v.end(), ostream_iterator<float>(ss, " "));
-    string s = ss.str();
-    s = s.substr(0, s.length()-1);  // get rid of the trailing space
-    return s;
+  vector<double> v = best.sense_x;
+  stringstream ss;
+  copy( v.begin(), v.end(), ostream_iterator<float>(ss, " "));
+  string s = ss.str();
+  s = s.substr(0, s.length()-1);  // get rid of the trailing space
+  return s;
 }
 string ParticleFilter::getSenseY(Particle best)
 {
-	vector<double> v = best.sense_y;
-	stringstream ss;
-    copy( v.begin(), v.end(), ostream_iterator<float>(ss, " "));
-    string s = ss.str();
-    s = s.substr(0, s.length()-1);  // get rid of the trailing space
-    return s;
+  vector<double> v = best.sense_y;
+  stringstream ss;
+  copy( v.begin(), v.end(), ostream_iterator<float>(ss, " "));
+  string s = ss.str();
+  s = s.substr(0, s.length()-1);  // get rid of the trailing space
+  return s;
 }
