@@ -52,12 +52,15 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
     particle.theta = sample_theta;
     particle.weight = 1.0 / num_particles;
 
+    weights.push_back(1.0 / num_particles);
+
     particles.push_back(particle);
   }
 
   is_initialized = true;
 }
 
+// The following implementation is adapted from Lesson 15, lecture 8
 void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) {
 	// TODO: Add measurements to each particle and add random Gaussian noise.
 	// NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
@@ -101,6 +104,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   and the following is a good resource for the actual equation to implement (look at equation 
 	//   3.33
 	//   http://planning.cs.uiuc.edu/node99.html
+  
 }
 
 void ParticleFilter::resample() {
@@ -108,6 +112,14 @@ void ParticleFilter::resample() {
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
 
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::discrete_distribution<> d(weights);
+
+  vector<Particle> newParticles;
+  for(int n=0; n<10000; ++n) {
+    ++m[d(gen)];
+  }
 }
 
 Particle ParticleFilter::SetAssociations(Particle& particle, const std::vector<int>& associations, 
